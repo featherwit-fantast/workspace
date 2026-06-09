@@ -1,0 +1,37 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: postgres-backup
+spec:
+  schedule: "{{ .Values.backup.schedule }}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: {{ .Values.backup.image }}
+              env:
+                - name: PGHOST    
+                  value: postgres-service
+                - name: PGUSER
+                  value: {{ .Values.postgresql.user }}
+                - name: PGPASSWORD
+                  value: {{ .Values.postgresql.password }}
+                - name: PGDATABASE
+                  value: {{ .Values.postgresql.dbName }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pg_dump -t test > /backups/backup_$(date +%s).sql
+                  ls -t /backups/backup_*.sql | tail -n +{{ add .Values.backup.retention 1 }} | xargs rm -f
+              volumeMounts:
+                - mountPath: /backups
+                  name: backup-storage
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: backup-pvc

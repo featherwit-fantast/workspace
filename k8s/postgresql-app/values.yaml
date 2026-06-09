@@ -1,0 +1,21 @@
+postgresql:
+  image: 192.168.100.12:5000/postgres:latest
+  port: 5432
+  dbName: postgres
+  user: postgres
+  password: postgres
+  storageSize: 10Gi  #数据库持久化
+
+service:
+  type: NodePort
+  nodePort: 30001
+
+initJob:
+  image: 192.168.100.12:5000/postgres:latest
+
+backup:
+  schedule: "*/5 * * * *"
+  retention: 10
+  image: 192.168.100.12:5000/postgres:latest
+  storageSize: 10Gi
+  backupPath: /mnt/data/backups  # 备份数据持久化

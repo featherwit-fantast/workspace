@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-init
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: init
+          image: {{ .Values.initJob.image }}
+          env:
+            - name: PGHOST
+              value: postgres-service
+            - name: PGUSER
+              value: {{ .Values.postgresql.user }}
+            - name: PGPASSWORD
+              value: {{ .Values.postgresql.password }}
+            - name: PGDATABASE
+              value: {{ .Values.postgresql.dbName }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h $PGHOST -p 5432; do sleep 2; done
+              psql -c "CREATE TABLE test (id SERIAL PRIMARY KEY, data TEXT);"
+              psql -c "INSERT INTO test (data) SELECT md5(random()::text) FROM generate_series(1,1000);"

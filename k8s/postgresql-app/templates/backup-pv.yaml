@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backup-pv
+spec:
+  storageClassName: local-backup-storage
+  capacity:
+    storage: {{ .Values.backup.storageSize }}
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/data/backups
+  persistentVolumeReclaimPolicy: Retain
