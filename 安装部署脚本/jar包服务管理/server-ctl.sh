@@ -4,7 +4,7 @@ set -euo pipefail
 WORK_DIR=$(cd "$(dirname "$0")" && pwd)   # 脚本所在目录
 LOG_ENABLED=true                           # 是否输出日志: true / false
 PID_FILE="$WORK_DIR/1.pid"                 # PID 文件路径
-LOG_FILE="$WORK_DIR/service.log"           # 日志文件路径
+LOG_FILE="$WORK_DIR/nohup.log"           # 日志文件路径
 
 # ===== Java 配置 =====
 JAVA_HOME="/usr/local/jdk/bin/java"        # Java 可执行文件路径
@@ -14,20 +14,44 @@ JAVA_OPTS="-Xms1024m -Xmx2048m"           # JVM 启动参数
 DOTNET_BIN="/usr/local/dotnet/dotnet"      # dotnet 可执行文件路径
 ASPNETCORE_ENVIRONMENT="dev"               # 运行环境: dev / test / production
 PORT=8888                                  # Web 服务监听端口
-NON_WEB_DLL="RealTimeCalcPositionService.dll"  # 不需要 --urls 的后台服务
+# 不需要 --urls 的后台服务
+NON_WEB_DLLS=(
+    "RealTimeCalcPositionService.dll"
+)
 
 # ===== 扫描服务文件（有且仅有一个） =====
+# JAR：扫描所有 .jar
 shopt -s nullglob
 JAR_FILES=("$WORK_DIR"/*.jar)
-DLL_FILES=("$WORK_DIR"/*.dll)
 shopt -u nullglob
+
+# DLL：只识别白名单中的服务 DLL
+VALID_DLLS=(
+    "YieldChain.CalcPlatform.Web.dll"
+    "YLErpWeb.dll"
+    "YLWebAPI.dll"
+    "YLManageAPI.dll"
+    "SmartTradingWeb.dll"
+    "RealTimeCalcPositionService.dll"
+)
+DLL_FILES=()
+for dll in "${VALID_DLLS[@]}"; do
+    if [ -f "$WORK_DIR/$dll" ]; then
+        DLL_FILES+=("$WORK_DIR/$dll")
+    fi
+done
 
 JAR_COUNT=${#JAR_FILES[@]}
 DLL_COUNT=${#DLL_FILES[@]}
 TOTAL=$((JAR_COUNT + DLL_COUNT))
 
 if [ "$TOTAL" -eq 0 ]; then
-    echo "❌ 当前目录未检测到服务文件 (.jar / .dll)"
+    echo "❌ 当前目录未检测到可识别的服务文件"
+    echo "支持的 JAR: 目录下唯一的 .jar 文件"
+    echo "支持的 DLL:"
+    for d in "${VALID_DLLS[@]}"; do
+        echo "  - $d"
+    done
     exit 1
 elif [ "$TOTAL" -gt 1 ]; then
     echo "❌ 当前目录存在多个服务文件："
@@ -50,7 +74,9 @@ fi
 
 # ===== 通用函数 =====
 clean_files() {
-    [ -f "$PID_FILE" ] && rm -f "$PID_FILE"
+    if [ -f "$PID_FILE" ]; then
+        rm -f "$PID_FILE"
+    fi
 }
 
 clean_log() {
@@ -60,7 +86,10 @@ clean_log() {
 }
 
 is_web_service() {
-    [ "$SERVICE_NAME" != "$NON_WEB_DLL" ]
+    for dll in "${NON_WEB_DLLS[@]}"; do
+        [ "$SERVICE_NAME" = "$dll" ] && return 1
+    done
+    return 0
 }
 
 # ===== 启动 =====
