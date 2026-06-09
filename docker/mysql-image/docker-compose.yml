@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  mysql-server:
+    image: mysql-trs:8.0.31
+    container_name: mysql-server
+    environment:
+      MYSQL_ROOT_PASSWORD: "D@tasu2e"
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - /home/mysql/data:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - mynetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+networks:
+  mynetwork:
+    external: true

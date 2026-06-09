@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.service.name }}
+data:
+  application.properties: |
+    spring.application.name=calc
+    spring.mvc.pathmatch.matching-strategy=ant_path_matcher
+    spring.datasource.driver-class-name={{ .Values.db.mysql.driver }}
+    spring.datasource.url=jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_calc?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+    spring.datasource.username={{ .Values.db.mysql.username }}
+    spring.datasource.password={{ .Values.db.mysql.password }}
+    spring.datasource.hikari.maximum-pool-size=10
+    spring.datasource.hikari.minimum-idle=5
+    spring.datasource.hikari.connection-timeout=30000
+    spring.datasource.hikari.idle-timeout=600000
+    spring.datasource.hikari.max-lifetime=1800000
+    refresh.delay=5 
+    bond.cache.maxSize=1000
+    bond.cache.expireAfterAccessHours=12
+    server.port=20000
+    # Actuator & Prometheus 配置
+    management.endpoints.web.exposure.include=health,prometheus
+    management.endpoint.health.show-details=always
+    management.endpoint.health.group.liveness.include=ping
+    management.endpoint.health.group.readiness.include=db,diskSpace,ping
+    management.endpoint.prometheus.enabled=true
+    management.metrics.tags.application=${spring.application.name}

@@ -1,0 +1,87 @@
+version: '3.8'
+
+networks:
+  mynetwork:
+    external: true
+
+services:
+  dolphinscheduler-tools:
+    image: dolphinscheduler-tools:3.2.2
+    container_name: dolphinscheduler-tools
+    environment:
+      - DATABASE=postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.2.96:5432/dolphinscheduler
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=D@tasu2e
+      - SPRING_JACKSON_TIME_ZONE=UTC
+    command: ["tools/bin/upgrade-schema.sh"]
+    restart: on-failure
+    networks:
+      - mynetwork
+
+  dolphinscheduler-master:
+    image: dolphinscheduler-master:3.2.2
+    container_name: dolphinscheduler-master
+    environment:
+      - DATABASE=postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.2.96:5432/dolphinscheduler
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=D@tasu2e
+      - SPRING_JACKSON_TIME_ZONE=UTC
+      - REGISTRY_ZOOKEEPER_CONNECT_STRING=192.168.2.96:12346
+    depends_on:
+      - dolphinscheduler-tools
+    restart: always
+    networks:
+      - mynetwork
+
+  dolphinscheduler-worker:
+    image: dolphinscheduler-worker:3.2.2
+    container_name: dolphinscheduler-worker
+    environment:
+      - DATABASE=postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.2.96:5432/dolphinscheduler
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=D@tasu2e
+      - SPRING_JACKSON_TIME_ZONE=UTC
+      - REGISTRY_ZOOKEEPER_CONNECT_STRING=192.168.2.96:12346
+    depends_on:
+      - dolphinscheduler-master
+    restart: always
+    networks:
+      - mynetwork
+
+  dolphinscheduler-api:
+    image: dolphinscheduler-api:3.2.2
+    container_name: dolphinscheduler-api
+    environment:
+      - DATABASE=postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.2.96:5432/dolphinscheduler
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=D@tasu2e
+      - SPRING_JACKSON_TIME_ZONE=UTC
+      - REGISTRY_ZOOKEEPER_CONNECT_STRING=192.168.2.96:12346
+    ports:
+      - "12345:12345"
+    depends_on:
+      - dolphinscheduler-master
+    restart: always
+    networks:
+      - mynetwork
+
+  dolphinscheduler-alert-server:
+    image: dolphinscheduler-alert-server:3.2.2
+    container_name: dolphinscheduler-alert-server
+    environment:
+      - DATABASE=postgresql
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.2.96:5432/dolphinscheduler
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=D@tasu2e
+      - SPRING_JACKSON_TIME_ZONE=UTC
+      - REGISTRY_ZOOKEEPER_CONNECT_STRING=192.168.2.96:12346
+    depends_on:
+      - dolphinscheduler-api
+    restart: always
+    networks:
+      - mynetwork
+

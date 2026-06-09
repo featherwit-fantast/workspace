@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.service.name }}
+    application: {{ .Values.service.name }}
+    namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+        application: {{ .Values.service.name }}
+        namespace: {{ .Values.namespace }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.service.name }}
+          image: {{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+            - containerPort: 20000
+          {{- with .Values.healthCheck.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.healthCheck.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.healthCheck.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: TZ
+              value: {{ .Values.env.timezone | quote }}
+            {{- if .Values.env.javaOpts }}
+            - name: JAVA_OPTS
+              value: {{ .Values.env.javaOpts | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.volumes.config.mountPath }}
+              readOnly: {{ .Values.volumes.config.readOnly }}
+            - name: log
+              mountPath: {{ .Values.volumes.log.mountPath }}
+            {{- if .Values.volumes.appDocs.enabled }}
+            - name: app-docs
+              mountPath: {{ .Values.volumes.appDocs.mountPath }}
+              subPath: {{ .Values.volumes.appDocs.subPath }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.service.name }}-config
+        - name: log
+          emptyDir: {}
+        {{- if .Values.volumes.appDocs.enabled }}
+        - name: app-docs
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.appDocs.pvcName }}
+        {{- end }}

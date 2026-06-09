@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.service.name }}
+data:
+  appsettings.prod.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+        "ylcms": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=yltrs_ylcms;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;",
+        "yladmin": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=yltrs_admin;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;",
+        "ylclient": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=yltrs_client;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;",
+        "bondoms": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=bond_oms;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;"
+      },
+      "AppSettings": {
+        "VirtualPathRoot": "",
+        "UseRightAligned": "",
+        "PluginFolder": ""
+      },
+      "LibreOffice": {
+        "ExePath": "",
+        "UserInstallation": ""
+      },
+      "EPPlus": {
+        "ExcelPackage": {
+          "LicenseContext": "NonCommercial"
+        }
+      },
+      "Redis": {
+        "ConnectionString": "{{ .Values.redis.host }}:{{ .Values.redis.port }},password={{ .Values.redis.password }}"
+      },
+      "KafkaConfig": {
+        "BootstrapServers": "{{ .Values.kafka.bootstrapServers }}",
+        "Acks": -1,
+        "EnableIdempotence": false,
+        "MaxInFlight": 5,
+        "CompressionType": 0,
+        "MessageTimeoutMs": 3000,
+        "ClientRateTopic": "ylClientRateTopic",
+        "HedgingAccountTopic": "ylHedgingAccountTopic",
+        "ReqAccountCapitalTopic": "ReqAccountCapital",
+        "OnRspAccountCapitalTopic": "OnRspAccountCapital",
+        "AccountCapitalTopicGroupId": "YiLian_OnRspAccountCapitalConsumer",
+        "AutoOffsetReset": 1,
+        "EnableCalcBongd": false,
+        "ReqClientRiskCheckTopic": "YiLian_ReqClientRiskCheck",
+        "ReqClientRiskCheckConsumerTopic": "YiLian_OnRspClientRiskCheck",
+        "ReqClientRiskCheckTopicGroupId": "YiLian_ReqClientRiskCheckConsumer",
+        "ReqClientMonitorTopic": "YiLian_ReqClientMonitor",
+        "OnRspClientMonitorConsumerTopic": "YiLian_OnRspClientMonitor",
+        "ReqClientMonitorTopicGroupId": "YiLian_ReqClientMonitorConsumer",
+        "ReqClientMonitorSingleTopic": "YiLian_ReqClientMonitorSingle",
+        "OnRspClientMonitorSingleConsumerTopic": "YiLian_OnRspClientMonitorSingle",
+        "ReqClientMonitorSingleTopicGroupId": "YiLian_ReqClientMonitorSingleConsumer",
+        "TrsExchangeTradeConsumerTopic": "YiLian_HedgingOrder",
+        "TrsExchangeTradeConsumerTopicGroupId": "YiLian_HedgingOrderGroup",
+        "YiLian_ReqHedgingOrderCancelTopic": "YiLian_ReqHedgingOrderCancel",
+        "YiLian_ReqHedgingOrderCancelTopicGroupId": "YiLian_ReqHedgingOrderCancelGroup",
+        "YiLian_RespHedgingOrderCancelTopic": "YiLian_RespHedgingOrderCancel",
+        "YiLian_ClientInfoChangeTopic": "YiLian_ClientInfoChangeTopic",
+        "YiLian_CashCalcConsumerTopic": "YiLian_CashCalc",
+        "YiLian_CashCalcConsumerGroup": "YiLian_CashCalcGroup",
+        "YiLian_CashNoticeConsumerTopic": "YiLian_CashNotice",
+        "YiLian_CashNoticeConsumerGroup": "YiLian_CashNoticeGroup",
+        "YiLian_HolidayResetTopic": "YiLian_HolidayReset",
+        "YiLian_HolidayResetGroupId": "YiLian_HolidayResetGroup",
+        "YiLian_SwapFlowTopic": "YiLian_SwapFlow",
+        "YiLian_SwapFlowGroup": "YiLian_SwapFlowGroup",
+        "YiLian_SysUserInfoChangeTopic": "YiLian_SysUserInfoChangeTopic"
+      },
+      "BondOmsInterface": {
+        "BaseUrl": "http://hedge:20000"
+      },
+      "Reg_Report_Url": "http://192.168.2.96:10019",
+      "OrcaleDatabaseConfig": {
+        "Schema": "APEX_040000"
+      },
+      "oa_confg": {
+        "BaseUrl": "{{ .Values.oaConfg.baseUrl }}",
+        "SubUrl": "{{ .Values.oaConfg.subUrl }}",
+        "SystemToken": "{{ .Values.oaConfg.systemToken }}", //OA系统key
+        "SystemName": "{{ .Values.oaConfg.systemName }}",
+        "IsNextFlow": 0, //是否自动提交 默认0
+        "FlowId": {{ .Values.oaConfg.flowId }},
+        "UploadUrl": "{{ .Values.oaConfg.uploadUrl }}"
+      },
+      "GeneralSSO": {
+      "enable": {{ .Values.generalSSO.enable }}, //是否启用通用SSO登录
+      "auth_url": "{{ .Values.generalSSO.authUrl }}", //SSO授权地址
+      "callback_url": "{{ .Values.generalSSO.callbackUrl }}", //回调处理地址
+      "get_user_url": "http://sso:20000/sso/getSsoUser" //获取用户信息接口地址
+      },
+      "ExternalCashFlow": {
+        "Token": "{{ .Values.externalCashFlow.token }}",
+        "BaseUrl": "{{ .Values.externalCashFlow.baseUrl }}"
+      }
+    }

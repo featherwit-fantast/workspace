@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  # Zookeeper 服务
+  zookeeper-zheshang:
+    image: zookeeper:3.8.0
+    container_name: zheshang_zookeeper
+    environment:
+      TZ: Asia/Shanghai
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_SERVER_ID: 1
+    volumes:
+      - /home/zheshang/kafka/zookeeper/conf/zoo.cfg:/opt/bitnami/zookeeper/conf/zoo.cfg
+      - /home/zheshang/kafka/zookeeper/data:/bitnami/zookeeper/data
+    ports:
+      - "10391:2181"
+    networks:
+      - mynetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "zkServer.sh", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Kafka 服务
+  kafka-zheshang:
+    image: kafka:latest
+    container_name: zheshang_kafka
+    environment:
+      TZ: Asia/Shanghai
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:10392
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://121.36.1.240:10392
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_ZOOKEEPER_CONNECT: 121.36.1.240:10391
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - /home/zheshang/kafka/data:/bitnami/kafka/data
+    depends_on:
+      - zookeeper-zheshang
+    ports:
+      - "10392:10392"
+    networks:
+      - mynetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "121.36.1.240:10392", "--list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s  # 增加启动等待时间
+
+networks:
+  mynetwork:
+    external: true
+

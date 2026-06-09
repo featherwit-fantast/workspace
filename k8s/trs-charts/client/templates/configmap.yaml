@@ -1,0 +1,317 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.service.name }}
+data:
+  application-dev.yml: |
+    spring:
+      datasource:
+        dynamic:
+          primary: trs
+          datasource:
+            trs:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/bond_oms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            admin:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_admin?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            client:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_client?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            ylcms:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_ylcms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+          druid:
+            initialSize: 1
+            maxActive: 20
+            minIdle: 1
+            maxWait: 60000
+      redis:
+        host: {{ .Values.redis.host }}
+        port: {{ .Values.redis.port }}
+        password: {{ .Values.redis.password }}
+        timeout: {{ .Values.redis.timeout }}
+        database: {{ .Values.redis.database }}
+        jedis:
+          pool:
+            max-active: {{ index .Values.redis.jedis.pool "max-active" }}
+            max-idle: {{ index .Values.redis.jedis.pool "max-idle" }}
+            max-wait: {{ index .Values.redis.jedis.pool "max-wait" }}
+      redisson:
+        config:
+          singleServerConfig:
+            address: {{ .Values.redis.redisson.config.singleServerConfig.address | quote }}
+            password: {{ .Values.redis.redisson.config.singleServerConfig.password | quote }}
+            connectionPoolSize: {{ .Values.redis.redisson.config.singleServerConfig.connectionPoolSize }}
+            connectionMinimumIdleSize: {{ .Values.redis.redisson.config.singleServerConfig.connectionMinimumIdleSize }}
+            idleConnectionTimeout: {{ .Values.redis.redisson.config.singleServerConfig.idleConnectionTimeout }}
+            connectTimeout: {{ .Values.redis.redisson.config.singleServerConfig.connectTimeout }}
+            timeout: {{ .Values.redis.redisson.config.singleServerConfig.timeout }}
+      kafka:
+        bootstrap-servers: {{ .Values.kafka.bootstrapServers | quote }}
+        producer:
+          retries: 3
+          batch-size: 0
+          buffer-memory: 33554432
+          acks: 1
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          group-id: default-group
+          enable-auto-commit: false
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        listener:
+          ack-mode: manual_immediate
+      mail:
+        host: smtp.163.com
+        port: 465
+        username: 13163351309@163.com
+        password: EPKWFDMUURVRZJVX
+        default-encoding: UTF-8
+        properties:
+          username: 13163351309@163.com
+          password: EPKWFDMUURVRZJVX
+        servlet:
+          multipart:
+            max-file-size: 10MB
+            max-request-size: 50MB
+    logging:
+      level:
+        springfox: warn
+    qtrade:
+      url: http://urm.sxzq.com
+      appId: 202356774002706905081119
+      appKey: b03acb7586026430d6294472285e4061
+    trs:
+      url: http://otc:20000
+    kafka-group-id-suffix: ""
+    kafka-group-hot: "client-hot96-test"
+    otcFilePath: "http://otc:20000"
+    mao_yuan_push:
+      url: "10.9.4.209:80"
+      pwd: "5yx4r1lz98y1"
+    sms:
+      url: http://10.9.68.100:7777/sendsms
+      username: TRS
+      password: amghzjEV
+      msgType: 1
+      batchName: abc
+      busiType: 1
+      switch: true
+    remote_bond_cal_url: http://calc:20000/v1/bond/
+    stc:
+      order_timeout: 15
+    ht:
+      servicePath: http://10.58.224.85:8087
+      userId: admin
+      pwd: zszq$$$$2023
+      desKey: qJzGEh6hESZDVJeCnFPGuxza
+      timeOutNum: 3
+      clientName: 虚拟对手
+    tpag:
+      sso:
+        redirect-host: http://hedge:20000
+        redirect-uri: /callback
+        slo-redirect-url: http://hedge:20000
+        feilian:
+          portal-host: {{ .Values.feilian.portalHost }}
+          client-id: {{ .Values.feilian.clientId }}
+          client-secret: {{ .Values.feilian.clientSecret }}
+        dingtalk:
+          portal-host: {{ .Values.dingtalk.portalHost }}
+          client-id: {{ .Values.dingtalk.clientId }}
+          client-secret: {{ .Values.dingtalk.clientSecret }}
+          api-host: {{ .Values.dingtalk.apiHost }}
+  application.yml: |
+    server:
+      port: 20000
+      max-http-header-size: 10240
+    spring:
+      application:
+        name: client
+      mvc:
+        pathmatch:
+          matching-strategy: ant_path_matcher
+      profiles:
+        active: dev
+      servlet:
+        multipart:
+          max-request-size: 100MB
+          max-file-size: 100MB
+      jackson:
+        time-zone: Asia/Shanghai
+        date-format: yyyy-MM-dd HH:mm:ss.SSS
+        locale: zh_CN
+        serialization:
+          indent_output: false
+      main:
+        allow-bean-definition-overriding: true
+      datasource:
+        druid:
+          stat-view-servlet:
+            login-username: admin
+            login-password: admin
+    mybatis-plus:
+      mapper-locations: classpath*:com/yieldchain/**/mapping/*.xml, classpath:/META-INF/modeler-mybatis-mappings/*.xml
+      configuration:
+        map-underscore-to-camel-case: true
+        cache-enabled: true
+        lazy-loading-enabled: true
+        multiple-result-sets-enabled: true
+        log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+      global-config:
+        banner: false
+        db-config:
+          id-type: assign_id
+          table-underline: true
+        enable-sql-runner: true
+      configuration-properties:
+        prefix:
+        blobType: BLOB
+        boolValue: true
+      type-enums-package: com.yieldchain.reg.modular.agrmt.enums
+    logging:
+      level:
+        com.anji: off
+        springfox: error
+    aj:
+      captcha:
+        cache-type: local
+        type: default
+        font-type: 宋体
+        water-mark: ""
+        req-frequency-limit-enable: true
+        req-get-lock-limit: 20
+        req-get-lock-seconds: 10
+        req-get-minute-limit: 30
+        req-check-minute-limit: 60
+        req-verify-minute-limit: 60
+        interference-options: 1
+    management:
+      endpoints:
+        web:
+          exposure:
+            exclude: env, heapdump, threaddump, mapping
+    druid:
+      loginUsername: admin
+      loginPassword: admin
+    knife4j:
+      enable: true
+      openapi:
+        title: 山证固收
+        description: 山证固收系统API
+        email: shangzhongyuan@yieldchain.com
+        concat: 尚中原
+        url: http://git.yiliantech.com/
+        version: v4.0
+        license: Apache 2.0
+        license-url: https://stackoverflow.com/
+        terms-of-service-url: https://stackoverflow.com/
+        group:
+          group1:
+            group-name: 系统默认
+            api-rule: package
+            api-rule-resources:
+              - com.yieldchain
+          group2:
+            group-name: 山证固收
+            api-rule: package
+            api-rule-resources:
+              - com.yieldchain.oms
+      production: false
+      setting:
+        custom-code: 500
+        enable-footer-custom: true
+        footer-custom-content: Copyright © 2023 镒链科技 All rights reserved.
+        language: zh_cn
+        enable-footer: true
+        enable-debug: true
+        enable-open-api: true
+        enable-host: false
+        enable-host-text: otc:20000
+        enableDynamicParameter: true
+      basic:
+        enable: false
+        username: ajfjdgafldfabc
+        password: 34ruieur398ueirujajA
+      cors: true
+    sms:
+      url: http://otc:20000/sendsingle1
+      username: TRS1
+      password: 9DK8YCEv1
+      msgType: 11
+      batchName: abc1
+      busiType: 12
+      switch: false
+    secure:
+      ignored:
+        urls:
+          - /favicon.ico
+          - /open/common/request
+          - /login
+          - /logout
+          - /oauth/**
+          - /auth/userLogin
+          - /getValidCodeOpen
+          - /getPhoneValidCode
+          - /captcha/**
+          - /getCaptchaOpen
+          - /calc/cal_bond_value
+          - /calc/get_date_by_type
+          - /doc.html
+          - /webjars/**
+          - /swagger-resources/**
+          - /v2/api-docs
+          - /v2/api-docs-ext
+          - /v3/api-docs
+          - /v3/api-docs-ext
+          - /swap/email/reply
+          - /orderJob/autoCancelOrder
+          - /marketJob/initMktMatrix
+          - /bondJob/bondBasicInfo
+          - /bondJob/chinaBondEvaluation
+          - /bondJob/calcBondRemainingTerm
+          - /eodBondMarketJob/initData
+          - /eodBondMarketJob/initDataPerDay
+          - /bondPoolPushJob/**
+          - /bondPoolCacheInitJob/initCache
+          - /swapAsset/sendRequest
+          - /marginAlgorithm/**
+          - /clientOrder/wordToPdf
+          - /clientOrderAdmin/checkOrderBonds
+          - /valuationEndOfDay/import
+          - /swap/email/**
+          - /dataVerify/sendRequest
+          - /email/send
+          - /general/email/**
+          - /open/common/request
+          - /open/websocket/**
+          - /doc.html
+          - /webjars/**
+          - /swagger-resources/**
+          - /v2/api-docs
+          - /v2/api-docs-ext
+          - /v3/api-docs
+          - /v3/api-docs-ext
+          - /open/websocket/**
+          - /open/common/decoding
+          - /open/common/generate-rsa
+    our_trading_info:
+      platform: ""
+      trader_id: ""
+    client:
+      risk:
+        url: http://otc:20000/risk/ClientRiskCheck

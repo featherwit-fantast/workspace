@@ -1,0 +1,163 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sync-config
+  labels:
+    app: sync
+    chart: trs
+    release: "{{ .Release.Name }}"
+data:
+  application-dev.yml: |
+    # Mysql数据库
+    spring:
+      datasource:
+        dynamic:
+          primary: admin #设置默认的数据源,默认值为crm
+          datasource:
+            ylcms: #数据源ylcms
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_ylcms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            bondSource:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/bigdata?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            bondCalc: #数据源bondCalc
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_calc?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+          druid:
+            #初始化时建立物理连接的个数
+            initialSize: 1
+            #池中最大连接数
+            maxActive: 20
+            #最小空闲连接
+            minIdle: 1
+            #获取连接时最大等待时间，单位毫秒
+            maxWait: 60000
+      redis:
+        host: {{ .Values.redis.host }}
+        port: {{ .Values.redis.port }}
+        password: {{ .Values.redis.password }}
+        database: {{ .Values.redis.database }}
+        jedis:
+          pool:
+            max-active: {{ index .Values.redis.jedis.pool "max-active" }}
+            max-idle: {{ index .Values.redis.jedis.pool "max-idle" }}
+            max-wait: {{ index .Values.redis.jedis.pool "max-wait" }}
+        topic:
+          market: rt_mt,abc
+      batch:
+        job:
+          enabled:
+    #二级缓存配置，支持分别设置两级缓存的独立过期时间
+    bilayer:
+      allowNull: true
+      init: 128
+      max: 1024
+      expireAfterWrite: 3000  #Caffeine过期时间-秒
+      redisExpire: 6000      #Redis缓存过期时间-秒
+
+    logging:
+      config: classpath:logback.xml
+
+    powerjob:
+      worker:
+        enabled: false
+    xxl:
+      job:
+        admin:
+          addresses: {{ .Values.xxlJob.admin.addresses }}
+        accessToken: {{ .Values.xxlJob.accessToken }}
+        executor:
+          appname: {{ .Values.xxlJob.executor.appname }}
+          # 如果address为空，则默认使用address注册，否则使用ip:port注册
+          address:
+          ip: {{ .Values.xxlJob.executor.ip }}
+          port: {{ .Values.xxlJob.executor.port }}
+          logpath: /data/applogs/xxl-job/jobhandler
+          logretentiondays: 30
+
+  application.yml: |
+    #服务配置
+    server:
+      port: 20000
+      max-http-header-size: 10240
+
+    #spring相关配置
+    spring:
+      application:
+        name: sync
+      mvc:
+        pathmatch:
+          matching-strategy: ant_path_matcher
+      profiles:
+        active: dev
+    #    active: local
+      servlet:
+        multipart:
+          max-request-size: 100MB
+          max-file-size: 100MB
+      jackson:
+        time-zone: GMT+8
+        date-format: yyyy-MM-dd HH:mm:ss.SSS
+        locale: zh_CN
+      main:
+        allow-bean-definition-overriding: true
+      datasource:
+        druid:
+          stat-view-servlet:
+            login-username: admin
+            login-password: admin
+
+    #mybaits相关配置
+    #配置日志  打印sql语句
+    mybatis-plus:
+      mapper-locations: classpath*:com/yieldchain/**/mapping/*.xml, classpath:/META-INF/modeler-mybatis-mappings/*.xml
+      configuration:
+        map-underscore-to-camel-case: true
+        cache-enabled: true
+        lazy-loading-enabled: true
+        multiple-result-sets-enabled: true
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+      #    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+      global-config:
+        banner: false
+        db-config:
+          id-type: assign_id
+          table-underline: true
+        enable-sql-runner: true
+      configuration-properties:
+        prefix:
+        #如果数据库为postgresql，则需要配置为blobType: BINARY
+        blobType: BLOB
+        #如果数据库为oracle或mssql，则需要配置为boolValue: 1
+        boolValue: true
+
+    #验证码相关配置 去除日志打印
+    logging:
+      level:
+        com.anji: off
+        springfox: warn
+
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,prometheus
+      endpoint:
+        health:
+          show-details: always
+          probes:
+            enabled: true
+        prometheus:
+          enabled: true
+      metrics:
+        tags:
+          application: ${spring.application.name}
+    druid:
+      loginUsername: admin
+      loginPassword: admin

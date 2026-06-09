@@ -1,0 +1,282 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.service.name }}
+data:
+  application-dev.yml: |
+    spring:
+      datasource:
+        dynamic:
+          primary: admin
+          datasource:
+            ylcms:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_ylcms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+              type: com.alibaba.druid.pool.DruidDataSource
+              druid:
+                initialSize: 1
+                maxActive: 20
+                minIdle: 1
+                maxWait: 60000
+            admin:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_admin?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+              type: com.alibaba.druid.pool.DruidDataSource
+              druid:
+                initialSize: 1
+                maxActive: 20
+                minIdle: 1
+                maxWait: 60000
+            client:
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_client?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&serverTimezone=CTT&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+              type: com.alibaba.druid.pool.DruidDataSource
+              druid:
+                initialSize: 1
+                maxActive: 20
+                minIdle: 1
+                maxWait: 60000
+        druid:
+          stat-view-servlet:
+            enabled: true
+            url-pattern: /druid/*
+            login-username: admin
+            login-password: admin
+            # 允许所有IP访问，如需限制特定IP可以按格式设置如: 127.0.0.1,192.168.1.100
+            allow: ""
+      redis:
+        host: {{ .Values.redis.host }}
+        port: {{ .Values.redis.port }}
+        password: {{ .Values.redis.password }}
+        database: {{ .Values.redis.database }}
+        lettuce:
+          pool:
+            max-active: {{ index .Values.redis.jedis.pool "max-active" }}
+            max-idle: {{ index .Values.redis.jedis.pool "max-idle" }}
+            max-wait: {{ index .Values.redis.jedis.pool "max-wait" }}
+
+    #二级缓存配置，支持分别设置两级缓存的独立过期时间
+    bilayer:
+      allowNull: true
+      init: 128
+      max: 1024
+      expireAfterWrite: 3000 #Caffeine过期时间-秒
+      redisExpire: 6000 #Redis缓存过期时间-秒
+
+    otcFilePath: {{ .Values.url.otc }}
+    yldb:
+      ylcms: yltrs_ylcms
+      client: yltrs_client
+      admin: yltrs_admin
+    otcApiIp: {{ .Values.url.otc }}
+
+  application.yml: |
+    server:
+      port: 20000
+      max-http-header-size: 10240
+
+    #spring相关配置
+    spring:
+      application:
+        name: yieldcertificate
+      mvc:
+        pathmatch:
+          matching-strategy: ant_path_matcher
+      profiles:
+        active: dev
+      servlet:
+        multipart:
+          max-request-size: 100MB
+          max-file-size: 100MB
+      jackson:
+        time-zone: GMT+8
+        date-format: yyyy-MM-dd HH:mm:ss.SSS
+        locale: zh_CN
+        serialization:
+          # 格式化输出
+          indent_output: false
+      main:
+        allow-bean-definition-overriding: true
+        lazy-initialization: false
+
+      datasource:
+        druid:
+          stat-view-servlet:
+            login-username: admin
+            login-password: admin
+
+    #mybaits相关配置
+    #配置日志  打印sql语句
+    mybatis-plus:
+      mapper-locations: classpath*:com/yieldchain/**/mapping/*.xml, classpath:/META-INF/modeler-mybatis-mappings/*.xml
+      configuration:
+        map-underscore-to-camel-case: true
+        cache-enabled: true
+        lazy-loading-enabled: true
+        multiple-result-sets-enabled: true
+        #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+      global-config:
+        banner: false
+        db-config:
+          id-type: assign_id
+          table-underline: true
+          logic-delete-field: isDelete
+          logic-delete-value: 1
+          logic-not-delete-value: 0
+        enable-sql-runner: true
+      configuration-properties:
+        prefix:
+        #如果数据库为postgresql，则需要配置为blobType: BINARY
+        blobType: BLOB
+        #如果数据库为oracle或mssql，则需要配置为boolValue: 1
+        boolValue: true
+    #验证码相关配置 去除日志打印
+    logging:
+      level:
+        com.anji: off
+        springfox: warn
+    #验证码相关配置
+    aj:
+      captcha:
+        cache-type: local #分布式部署需要 自己实现CaptchaCacheService 使用redis需要配置redis相关配置
+        type: default #验证码类型 clickword 为点选   blockPuzzle 为滑块验证码   default 两种都实例化
+        font-type: 宋体
+        # 汉字统一使用Unicode,保证程序通过@value读取到是中文，可通过这个在线转换
+        # https://tool.chinaz.com/tools/unicode.aspx 中文转Unicode
+        # 右下角水印文字(镒链科技)
+        water-mark: 镒链科技
+        water-font: 宋体 # 右下角水印字体(宋体)
+        req-frequency-limit-enable: true #接口请求次数一分钟限制是否开启 true|false
+        req-get-lock-limit: 20 # 验证失败2次，get接口锁定
+        req-get-lock-seconds: 10 # 验证失败后，锁定时间间隔,s
+        req-get-minute-limit: 30 # get接口一分钟内请求数限制
+        req-check-minute-limit: 60 # check接口一分钟内请求数限制
+        req-verify-minute-limit: 60 # verify接口一分钟内请求数限制
+        interference-options: 2 # 滑动干扰项(0/1/2)
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,prometheus
+      endpoint:
+        health:
+          show-details: always
+          probes:
+            enabled: true
+        prometheus:
+          enabled: true
+      metrics:
+        tags:
+          application: ${spring.application.name}
+    druid:
+      loginUsername: admin
+      loginPassword: admin
+    # CAS相关配置
+    cas:
+      # CAS服务器登录地址
+      loginUrl: https://casgbk.csc108.com/login
+      # CAS服务器验证地址
+      validateUrl: https://casgbk.csc108.com/serviceValidate
+      # CAS服务器退出地址
+      logoutUrl: https://casgbk.csc108.com/logout
+      # 系统回调地址
+      callbackUrl: http://localhost:8888/casCallback
+      # 是否自动创建用户
+      autoCreateUser: true
+    knife4j:
+      enable: true
+      openapi:
+        title: 场外衍生品簿记系统
+        description: 场外衍生品簿记系统
+        email: shangzhongyuan@yieldchain.com
+        concat: 尚中原
+        url: http://git.yiliantech.com/
+        version: v4.0
+        license: Apache 2.0
+        license-url: https://yiliantech.com/
+        terms-of-service-url: https://yiliantech.com/
+        group:
+          group1:
+            group-name: 系统默认
+            api-rule: package
+            api-rule-resources:
+              - com.yieldchain
+
+    secure:
+      ignored:
+        urls: #安全路径白名单
+          - /favicon.ico
+          - /prod-daily-valuation-report/callBack
+          - /doc.html
+          - /webjars/**
+          - /swagger-resources/**
+          - /v2/api-docs
+          - /v2/api-docs-ext
+          - /configuration/ui
+          - /configuration/security
+          - /
+          - /login
+          #   本地调试时打开，用于获取token
+          #      - /loginDev
+          - /ticketLogin
+          - /logout
+          - /oauth/**
+          - /auth/userLogin
+          - /getValidCodeOpen
+          - /getPhoneValidCode
+          - /sysFileInfo/upload
+          - /sysFileInfo/download
+          - /sysFileInfo/preview
+          - /druid/**
+          - /captcha/**
+          - /getCaptchaOpen
+          - /actuator/**
+          - /v1/calc/**
+          - /calendar/**
+          - /riskReport/**
+          - /invest/closingUpdate
+          - /invest/sendEmailJob
+          - /optionReportCache/init
+          - /otcIndex/sendEmail
+          - /otcIndex/updateCorn
+          - /otcIndex/getCorn
+          - /eod/eodProdAdd
+
+    investPath: "invest"
+
+    powerJob:
+      domain: "192.168.2.230:7700"
+      appName: "otcdms"
+      password: "otcdms"
+      jobId: 118
+      todoJobId: 117
+    otc:
+      client:
+        file:
+          root-dir: ${user.home}/otc
+    third:
+      url:
+        # C#接口限额试算
+        precalc: /trade/quotaTrialJson
+    redis:
+      mq:
+        streams:
+          # topic名称 注册监听策略的时候要一致
+          - name: "LISTENER:TRADE_STATUS"
+            groups:
+              # 消费组名称 对应的监听策略确认消息的时候要一致
+              name: "TRADE_STATUS_GROUP"
+              # 消费者名称
+              consumer: "TRADE_STATUS_A"
+

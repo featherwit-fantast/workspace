@@ -1,0 +1,43 @@
+# Trader UI 服务 - 生产环境配置
+namespace: onederiv
+replicaCount: 1
+
+# 镜像配置
+image:
+  repository: devops-docker-bkrepo.glmszq.com/w283fd/docker-local
+  name: nginx-trader
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# 镜像拉取凭证
+imagePullSecrets:
+  - name: docker-repo-token
+
+# 服务配置
+service:
+  name: trader-ui
+  port: 80
+  type: ClusterIP
+
+# 资源限制
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+# Ingress配置
+ingress:
+  enabled: true
+  className: "kubesphere-router-namespace-onederiv"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: '100000'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '100000'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '100000'
+  host: "onederiv-trader.glmszq.com"
+  path: /
+  pathType: Prefix

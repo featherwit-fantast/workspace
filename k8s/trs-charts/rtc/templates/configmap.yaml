@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.service.name }}
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "Syslog": {
+          "LogLevel": {
+            "Default": "None"
+          }
+        },
+        "Journal": {
+          "LogLevel": {
+            "Default": "None"
+          }
+        },
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.Hosting.Lifetime": "Warning"
+        }
+      },
+      "ConnectionStrings": {
+        "ylcms": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=yltrs_ylcms;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;",
+        "yladmin": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=yltrs_admin;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;",
+        "ylclient": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=yltrs_client;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;",
+        "bondoms": "server={{ .Values.db.mysql.host }};uid='{{ .Values.db.mysql.username }}';pooling=true;port={{ .Values.db.mysql.port }};pwd='{{ .Values.db.mysql.password }}';database=bond_oms;charset=utf8;Allow User Variables=True;SslMode=none;Connection Timeout=30;IgnoreCommandTransaction=true;"
+      },
+      "AppSettings": {
+        "RunInterval": "1000",
+        "VirtualPathRoot": ""
+      },
+      "Redis": {
+        "ConnectionString": "{{ .Values.redis.host }}:{{ .Values.redis.port }},password={{ .Values.redis.password }}"
+      },
+      "KafkaConfig": {
+        "BootstrapServers": "{{ .Values.kafka.bootstrapServers }}",
+        "Acks": -1,
+        "EnableIdempotence": false,
+        "MaxInFlight": 5,
+        "CompressionType": 0,
+        "MessageTimeoutMs": 3000,
+        "ClientRateTopic": "ylClientRateTopic",
+        "HedgingAccountTopic": "ylHedgingAccountTopic",
+        "ReqAccountCapitalTopic": "ReqAccountCapital",
+        "OnRspAccountCapitalTopic": "OnRspAccountCapital",
+        "AccountCapitalTopicGroupId": "YiLian_OnRspAccountCapitalConsumer",
+        "ReqCalcBondTopic": "ReqCalcBond",
+        "OnRspCalcBondTopic": "OnRspCalcBond",
+        "OnRspCalcBondTopicGroupId": "OnRspCalcBondConsumer",
+        "AutoOffsetReset": 1,
+        "EnableCalcBongd": true
+      },
+      "BondOmsInterface": {
+        "BaseUrl": "http://hedge:20000",
+        "CalculateDMAMarginUrl": "/marginAlgorithm/realTimeMarginCalc"
+      }
+    }

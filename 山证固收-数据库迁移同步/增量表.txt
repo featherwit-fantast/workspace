@@ -1,0 +1,43 @@
+-- 库名yltrs_ylcms
+| # | 表名 | 增量条件 | 说明 |
+|---|------|----------|------|
+| 1 | `trade` | `WHERE OptDate >= '{上次同步时间}'` | 交易主表，状态: 新增待确认→确认成交→已平仓 |
+| 2 | `trade_cash` | `WHERE ValueDate = '{交易日}' OR OptDate >= '{上次同步时间}'` | 资金流水 |
+| 3 | `trade_extend` | `WHERE update_time >= '{上次同步时间}'` | 交易扩展信息（JSON） |
+| 4 | `trade_span` | `WHERE OptDate >= '{上次同步时间}'` | 交易保证金/SPAN |
+| 5 | `trade_contract_r` | `WHERE OptDate >= '{上次同步时间}'` | 确认书编号关联 |
+
+| # | 表名 | 增量条件 | 说明 |
+|---|------|----------|------|
+| 1 | `swap_position` | `WHERE OptTime >= '{上次同步时间}'` | 互换持仓（实时更新） |
+| 2 | `swap_flow` | `WHERE OptTime >= '{上次同步时间}'` | 互换流水，DataState: 0=废弃, 1=等待, 100=完成 |
+| 3 | `swap_flow_deal` | `WHERE OptTime >= '{上次同步时间}'` | 互换流水成交关联 |
+| 4 | `swap_flow_event` | `WHERE EventDate = '{交易日}' OR OptTime >= '{上次同步时间}'` | 互换流水事件（开仓/平仓/互换） |
+| 5 | `swap_event` | `WHERE ValueDate = '{交易日}' OR OptTime >= '{上次同步时间}'` | 互换生命周期事件 |
+| 6 | `swap_rate` | `WHERE opt_time >= '{上次同步时间}'` | 互换利率 |
+| 7 | `swap_float_rate` | `WHERE opt_time >= '{上次同步时间}'` | 浮动利率 |
+| 8 | `swap_rate_log` | `WHERE opt_time >= '{上次同步时间}'` | 利率变更日志 |
+| 9 | `swap_fund_account` | 全量 | 互换资金账户 |
+| 10 | `dma_margin_record` | `WHERE OptTime >= '{上次同步时间}'` | DMA 保证金记录 |
+
+| # | 表名 | 增量条件 | 说明 |
+|---|------|----------|------|
+| 1 | `trade_contract_document` | `WHERE ValueDate = '{交易日}' OR OptDate >= '{上次同步时间}'` | 用印文件，Status: 草稿→单方用印→双方用印 |
+
+| # | 表名 | 增量条件 | 说明 |
+|---|------|----------|------|
+| 1 | `clientcashincashout` | `WHERE HappenDate = '{交易日}' OR CreateDate >= '{上次同步时间}'` | 客户出入金，State: 未确认→已同意→已确认→已结算 |
+
+
+-- 库名bond_oms
+| # | 表名 | 增量条件 | 说明 |
+|---|------|----------|------|
+| 1 | `client_order` | `WHERE create_time >= '{上次同步时间}'` | 客户委托，settl_date 为清算日期 |
+| 2 | `client_deal` | `WHERE create_time >= '{上次同步时间}'` | 客户成交，通过 order_sno 与 swap_flow 关联 |
+| 3 | `hedge_order` | `WHERE create_time >= '{上次同步时间}'` | 对冲委托 |
+| 4 | `hedge_deal` | `WHERE create_time >= '{上次同步时间}'` | 对冲成交 |
+| 5 | `qt_order_info` | `WHERE create_time >= '{上次同步时间}'` | QT 委托信息 |
+| 6 | `order_operate_log` | `WHERE create_time >= '{上次同步时间}'` | 委托操作日志 |
+| 7 | `order_record_unwind_detail` | `WHERE update_time >= '{上次同步时间}'` | 平仓明细 |
+| 8 | `client_swap_confirm_log` | `WHERE opt_time >= '{上次同步时间}'` | 客户互换确认日志 |
+| 9 | `client_order_swap_record` | `WHERE create_time >= '{上次同步时间}'` | 客户委托互换记录 |

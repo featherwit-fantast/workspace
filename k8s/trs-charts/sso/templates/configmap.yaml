@@ -1,0 +1,360 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sso-config
+  labels:
+    app: sso
+    chart: trs
+    release: "{{ .Release.Name }}"
+data:
+  application-dev.yml: |
+    spring:
+      datasource:
+        dynamic:
+          primary: trs #设置默认的数据源,默认值为trs
+          datasource:
+            trs: #数据源：bond_oms
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/bond_oms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            admin: #数据源：yltrs_admin
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_admin?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            client: #数据源：yltrs_client
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_client?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+            ylcms: #数据源：yltrs_ylcms
+              url: jdbc:mysql://{{ .Values.db.mysql.host }}:{{ .Values.db.mysql.port }}/yltrs_ylcms?autoReconnect=true&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true
+              username: {{ .Values.db.mysql.username | quote }}
+              password: {{ .Values.db.mysql.password | quote }}
+              driver-class-name: {{ .Values.db.mysql.driver }}
+          druid:
+            #初始化时建立物理连接的个数
+            initialSize: 1
+            #池中最大连接数
+            maxActive: 20
+            #最小空闲连接
+            minIdle: 1
+            #获取连接时最大等待时间，单位毫秒
+            maxWait: 60000
+      redis:
+        host: {{ .Values.redis.host }}
+        port: {{ .Values.redis.port }}
+        password: {{ .Values.redis.password }}
+        timeout: {{ .Values.redis.timeout }}
+        database: {{ .Values.redis.database }}
+        jedis:
+          pool:
+            max-active: {{ index .Values.redis.jedis.pool "max-active" }}
+            max-idle: {{ index .Values.redis.jedis.pool "max-idle" }}
+            max-wait: {{ index .Values.redis.jedis.pool "max-wait" }}
+
+      kafka:
+        bootstrap-servers: {{ .Values.kafka.bootstrapServers | quote }}
+        producer: # 生产者
+          retries: 3 # 设置大于0的值，则客户端会将发送失败的记录重新发送
+          batch-size: 131072
+          buffer-memory: 67108864
+          acks: 1  # acks=0，生产者在成功写入消息之前不会等待任何来自服务器的响应.
+          # acks=1,只要集群的leader分区副本接收到了消息，就会向生产者发送一个成功响应的ack.
+          # acks=all, 所有参与复制的节点(ISR列表的副本)全部收到消息时，生产者才会接收到来自服务器的响应
+          # 此时如果ISR同步副本的个数小于min.insync.replicas的值，消息不会被写入.
+          # 指定消息key和消息体的编解码方式
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          group-id: default-group
+          enable-auto-commit: false
+          auto-offset-reset: latest #earliest 当各分区下有已提交的offset时，从提交的offset开始消费；无提交的offset时，从头开始消费
+          #默认值为 latest 当各分区下有已提交的offset时，从提交的offset开始消费；无提交的offset时，消费新产生的该分区下的数据
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        listener:
+          # 当每一条记录被消费者监听器（ListenerConsumer）处理之后提交
+          # RECORD
+          # 当每一批poll()的数据被消费者监听器（ListenerConsumer）处理之后提交
+          # BATCH
+          # 当每一批poll()的数据被消费者监听器（ListenerConsumer）处理之后，距离上次提交时间大于TIME时提交
+          # TIME
+          # 当每一批poll()的数据被消费者监听器（ListenerConsumer）处理之后，被处理record数量大于等于COUNT时提交
+          # COUNT
+          # TIME |　COUNT　有一个条件满足时提交
+          # COUNT_TIME
+          # 当每一批poll()的数据被消费者监听器（ListenerConsumer）处理之后, 手动调用Acknowledgment.acknowledge()后提交
+          # MANUAL
+          # 手动调用Acknowledgment.acknowledge()后立即提交，一般使用这种
+          # MANUAL_IMMEDIATE
+          ack-mode: manual_immediate
+
+      mail:
+        host: smtp.163.com #服务器地址
+        port: 465
+        username: 13163351309@163.com #登陆账号
+        password: EPKWFDMUURVRZJVX #登陆密码（或授权码）
+        ccaddress: z1219156804@163.com
+        default-encoding: UTF-8
+        protocol: smtps #ssl时需要设置为smtps,否则设置为smtp,或删除该设置
+        properties:
+          username: 13163351309@163.com #邮件发信人（即真实邮箱）
+          password: EPKWFDMUURVRZJVX #登陆密码（或授权码）
+        servlet:
+          multipart:
+            max-file-size: 10MB #限制单个文件大小
+            max-request-size: 50MB #限制请求总量
+    #山西证券收益互换业务系统地址
+
+    trs:
+      url: http://git.yiliantech.com:8001/bond-oms-ui/trs_trader
+    #禁用邮箱健康检查
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,prometheus
+      endpoint:
+        health:
+          show-details: always
+          probes:
+            enabled: true
+        prometheus:
+          enabled: true
+      metrics:
+        tags:
+          application: ${spring.application.name}
+
+    kafka-group-id-suffix: "202311-B"
+    kafka-group-hot: "hedge-202311-B"
+
+    otcFilePath: "http://trs.yiliantech.com:8081"
+
+    mao_yuan_push:
+      url: "10.9.4.209:80"
+      pwd: "5yx4r1lz98y1"
+
+    knife4j:
+      enable: true
+      openapi:
+        title: 浙商固收
+        description: 浙商固收系统API
+        email: shangzhongyuan@yieldchain.com
+        concat: 尚中原
+        url: http://trs.yiliantech.com/
+        version: v4.0
+        license: Apache 2.0
+        license-url: https://stackoverflow.com/
+        terms-of-service-url: https://stackoverflow.com/
+        group:
+          group1:
+            group-name: 系统默认
+            api-rule: package
+            api-rule-resources:
+              - com.yieldchain
+          group2:
+            group-name: 浙商固收
+            api-rule: package
+            api-rule-resources:
+              - com.yieldchain.oms
+      production: false
+      setting:
+        custom-code: 500
+        enable-footer-custom: true
+        footer-custom-content: Copyright © 2023 镒链科技 All rights reserved.
+        language: zh_cn
+        enable-footer: true
+        enable-debug: true
+        enable-open-api: true
+        enable-host: false
+        enable-host-text: localhost:20000
+        enableDynamicParameter: true
+      basic:
+        enable: false
+        username: fsfdsafdgsfwe
+        password: 123343rerer3w322
+      cors: true
+    secure:
+      ignored:
+        urls: #安全路径白名单
+          - /favicon.ico
+          - /login
+          - /sso/login
+          - /sso/getSsoUser
+          - /oidc/callback
+          - /logout
+          - /oauth/**
+          - /auth/userLogin
+          - /getValidCodeOpen
+          - /getPhoneValidCode
+          - /captcha/**
+          - /getCaptchaOpen
+          - /calc/cal_bond_value
+          - /calc/get_date_by_type
+          # 监控
+          - /actuator/**
+          # swagger文档 开发调试使用-注意同时修改 production:false basic:enable:false
+          - /doc.html
+          - /webjars/**
+          - /swagger-resources/**
+          - /v2/api-docs
+          - /v2/api-docs-ext
+          - /v3/api-docs
+          - /v3/api-docs-ext
+          # 以下↓是powerJob调用接口
+          - /swap/email/reply
+          - /orderJob/autoCancelOrder
+          - /orderJob/autoSyncOrder
+          - /orderJob/autoCancelHedgeOrder
+          - /marketJob/initMktMatrix
+          - /bondJob/bondBasicInfo
+          - /bondJob/chinaBondEvaluation
+          - /bondJob/calcBondRemainingTerm
+          - /eodBondMarketJob/initData
+          - /eodBondMarketJob/initDataPerDay
+          - /bondPoolPushJob/**
+          - /bondPoolCacheInitJob/initCache
+          # 管理端调用 保证金算法相关、WordToPDF、标的白名单、导入日终估值、Swap邮件结算确认书、交易确认书、日终估值获取
+          - /marginAlgorithm/**
+          - /clientOrder/wordToPdf
+          - /clientOrderAdmin/checkOrderBonds
+          - /valuationEndOfDay/import
+          - /swap/email/**
+          - /dataVerify/sendRequest
+          - /client-monitor/**
+          - /email/send
+          - /general/email/**
+          - /swapAsset/sendRequest
+          - /position/sendstc
+          - /riskJob/reloadCache
+          - /riskJob/refreshClientRiskCache
+    remote_bond_cal_url: http://localhost:8080/v1/bond/
+    stc:
+      order_timeout: 180
+    ht:
+      servicePath: http://10.58.224.85:8087
+      userId: admin
+      pwd: zszq$$$$2023
+      desKey: qJzGEh6hESZDVJeCnFPGuxza
+      timeOutNum: 3
+      clientName: 虚拟对手
+
+  application.yml: |
+    #服务配置
+    server:
+      port: 20000
+      max-http-header-size: 10240
+
+    #spring相关配置
+    spring:
+      application:
+        name: sso
+      mvc:
+        pathmatch:
+          matching-strategy: ant_path_matcher
+      profiles:
+        active: dev
+      servlet:
+        multipart:
+          max-request-size: 100MB
+          max-file-size: 100MB
+      jackson:
+        time-zone: Asia/Shanghai
+        date-format: yyyy-MM-dd HH:mm:ss.SSS
+        locale: zh_CN
+        serialization:
+          # 格式化输出
+          indent_output: false
+      main:
+        allow-bean-definition-overriding: true
+      datasource:
+        druid:
+          stat-view-servlet:
+            login-username: admin
+            login-password: admin
+
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,prometheus
+      endpoint:
+        health:
+          show-details: always
+          probes:
+            enabled: true
+        prometheus:
+          enabled: true
+      metrics:
+        tags:
+          application: ${spring.application.name}
+
+
+    #mybaits相关配置
+    mybatis-plus:
+      mapper-locations: classpath*:com/yieldchain/**/mapping/*.xml, classpath:/META-INF/modeler-mybatis-mappings/*.xml
+      configuration:
+        map-underscore-to-camel-case: true
+        cache-enabled: true
+        lazy-loading-enabled: true
+        multiple-result-sets-enabled: true
+        #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+      global-config:
+        banner: false
+        db-config:
+          id-type: assign_id
+          table-underline: true
+        enable-sql-runner: true
+      configuration-properties:
+        prefix:
+        #如果数据库为postgresql，则需要配置为blobType: BINARY
+        blobType: BLOB
+        #如果数据库为oracle或mssql，则需要配置为boolValue: 1
+        boolValue: true
+      type-enums-package: com.yieldchain.modular.agrmt.enums
+
+    #验证码相关配置 去除日志打印
+    logging:
+      level:
+        com.anji: off
+        springfox: warn
+    #验证码相关配置
+    aj:
+      captcha:
+        cache-type: local #分布式部署需要 自己实现CaptchaCacheService 使用redis需要配置redis相关配置
+        type: default #验证码类型 clickword 为点选   blockPuzzle 为滑块验证码   default 两种都实例化
+        font-type: 宋体
+        water-mark: ""
+        req-frequency-limit-enable: true #接口请求次数一分钟限制是否开启 true|false
+        req-get-lock-limit: 20  # 验证失败2次，get接口锁定
+        req-get-lock-seconds: 10 # 验证失败后，锁定时间间隔,s
+        req-get-minute-limit: 30 # get接口一分钟内请求数限制
+        req-check-minute-limit: 60 # check接口一分钟内请求数限制
+        req-verify-minute-limit: 60 # verify接口一分钟内请求数限制
+        interference-options: 1 # 滑动干扰项(0/1/2)
+
+    druid:
+      loginUsername: admin
+      loginPassword: admin
+    #  保证金算法规则-SPEL表达式 后续考虑落库现阶段暂且先放这里
+    calculation:
+      rules:
+        long: "priceRange > 0.98 ? initialMargin :  (priceRange <= 0.98 && priceRange > 0.96) ? initialMargin + 0.02 * openingNetPrice : (priceRange > 0.94 && priceRange <= 0.96) ?  initialMargin + 0.04 * openingNetPrice : initialMargin + 0.06 * openingNetPrice"
+        short: "priceRange > 1.08 ? initialMargin + 0.06 * openingNetPrice : (priceRange > 1.06 && priceRange <= 1.08) ? initialMargin + 0.03 * openingNetPrice : (priceRange > 1.04 && priceRange <= 1.06) ? initialMargin + 0.05 * openingNetPrice :(priceRange > 1.02 && priceRange <= 1.04) ? initialMargin + 0.05 * openingNetPrice : initialMargin"
+    tpag:
+      sso:
+        redirect-host: {{ .Values.sso.redirectHost }}
+        redirect-uri: {{ .Values.sso.redirectUri }}
+        slo-redirect-url: {{ .Values.sso.sloRedirectUrl }}
+        feilian:
+          portal-host: {{ .Values.sso.feilian.portalHost }}
+          client-id: {{ .Values.sso.feilian.clientId }}
+          client-secret: {{ .Values.sso.feilian.clientSecret }}
+        dingtalk:
+          portal-host: {{ .Values.sso.dingtalk.portalHost }}
+          client-id: {{ .Values.sso.dingtalk.clientId }}
+          client-secret: {{ .Values.sso.dingtalk.clientSecret }}
+          api-host: {{ .Values.sso.dingtalk.apiHost }}

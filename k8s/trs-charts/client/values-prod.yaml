@@ -1,0 +1,124 @@
+# Client Backend 服务 - 生产环境配置
+namespace: onederiv
+replicaCount: 1
+
+# 镜像配置
+image:
+  repository: devops-docker-bkrepo.glmszq.com/w283fd/docker-local
+  name: client
+  tag: "1.1"
+  pullPolicy: IfNotPresent
+
+# 镜像拉取凭证
+imagePullSecrets:
+  - name: docker-repo-token
+
+# 服务配置
+service:
+  name: client
+  port: 20000
+  type: ClusterIP
+  annotations:
+    monitor.glmszq.com/monitor: 'true'
+    monitor.glmszq.com/path: /actuator/prometheus
+    monitor.glmszq.com/port: '20000'
+
+# 健康检查配置
+healthCheck:
+  livenessProbe:
+    httpGet:
+      path: /actuator/health/liveness
+      port: 20000
+    initialDelaySeconds: 60
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /actuator/health/readiness
+      port: 20000
+    initialDelaySeconds: 30
+    periodSeconds: 5
+  startupProbe:
+    httpGet:
+      path: /actuator/health/liveness
+      port: 20000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 30
+
+# 资源限制
+resources:
+  requests:
+    cpu: "1000m"
+    memory: "2Gi"
+  limits:
+    cpu: "4000m"
+    memory: "4Gi"
+
+# 环境变量
+env:
+  timezone: "Asia/Shanghai"
+  javaOpts: "-Xms2048m -Xmx4096m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+# Volume挂载配置
+volumes:
+  config:
+    mountPath: "/app/config"
+    readOnly: true
+  log:
+    mountPath: "/app/app-log"
+  appDocs:
+    enabled: false
+
+# 生产环境数据库配置
+db:
+  mysql:
+    host: 10.168.90.88  # 生产环境数据库地址
+    port: 2883
+    username: onederiv@OneDeriv#wx_yd_obprod
+    password: Onederiv@yd2026
+    databases:
+      bond_oms: bond_oms
+      yltrs_admin: yltrs_admin
+      yltrs_client: yltrs_client
+      yltrs_ylcms: yltrs_ylcms
+    driver: com.mysql.cj.jdbc.Driver
+
+# 生产环境Kafka配置
+kafka:
+  bootstrapServers: "10.237.12.33:9092,10.237.12.34:9092,10.237.12.35:9092"
+
+# 生产环境Redis配置
+redis:
+  host: 10.237.12.220
+  port: 6379
+  password: GLms@527
+  timeout: 5000
+  database: 0
+  jedis:
+    pool:
+      max-active: 32
+      max-idle: 16
+      max-wait: 10000
+  redisson:
+    config:
+      singleServerConfig:
+        address: "redis://10.237.12.220:6379"
+        password: GLms@527
+        connectionPoolSize: 128
+        connectionMinimumIdleSize: 48
+        idleConnectionTimeout: 10000
+        connectTimeout: 10000
+        timeout: 3000
+
+#飞连
+feilian:
+  portalHost: "https://test-zero.glms.com.cn:10443"
+  clientId: "CRWhsgodmYFLrzTfrQEoQWSjTRjrOkPPcSMXskkG"
+  clientSecret: "dIdAUZFNZAFRzMlRMTjOuzlGBcxTdbdTNXTQSUeV"
+
+#钉钉
+dingtalk:
+  portalHost: "https://oapi.dingtalk.com"
+  clientId: "dingfirrmufzporwen7f"
+  clientSecret: "K7w9DMZV8jdvyxz4zIXM9ssPDeeuTwo7jJCBkOBVn5iODw9g-FD0AhnjqKOvEztK"
+  apiHost: "https://api.dingtalk.com"
